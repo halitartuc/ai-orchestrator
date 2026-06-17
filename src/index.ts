@@ -12,14 +12,21 @@ import { runDebate } from "./strategies/debate.js";
 import { runBrainstorm } from "./strategies/brainstorm.js";
 import { runEvaluate, runSpecReview } from "./strategies/evaluate.js";
 import {
+  buildCouncilSimulation,
+  buildDebateSimulation,
+  buildBrainstormSimulation,
+  buildEvaluateSimulation,
+  buildSpecReviewSimulation,
+} from "./simulation.js";
+import {
   getCouncil,
   listCouncils,
   listAdvisors,
   ADVISORS,
   COUNCILS,
 } from "./personas.js";
-import { autoDetectProviders, createProvider } from "./providers.js";
-import type { ProviderConfig } from "./types.js";
+import { autoDetectProviders, createProvider, hasConfiguredProviders } from "./providers.js";
+import type { ProviderConfig, EvaluationCriterion } from "./types.js";
 
 // ─── MCP Server Setup ───
 
@@ -40,8 +47,8 @@ const server = new Server(
 const TOOLS = [
   {
     name: "orchestrate",
-    description:
-      "Run an AI orchestration strategy to evaluate a decision, idea, or plan from multiple independent perspectives. Supports: council (multi-advisor with anonymous peer review — Karpathy method), debate (structured pro/con), brainstorm (creative idea generation), evaluate (multi-criteria scoring), and spec-review (specialist review). Use when you need a thorough, multi-angle analysis before making a decision.",
+      description:
+        "Run an AI orchestration strategy to evaluate a decision, idea, or plan from multiple independent perspectives. Supports: council (multi-advisor with anonymous peer review — Karpathy method), debate (structured pro/con), brainstorm (creative idea generation), evaluate (multi-criteria scoring), and spec-review (specialist review). Works WITHOUT API keys — uses the calling AI's own intelligence when no provider is configured. Set one of: OPENAI_API_KEY, ANTHROPIC_API_KEY for automated LLM calls.",
     inputSchema: {
       type: "object" as const,
       properties: {
@@ -142,7 +149,25 @@ server.setRequestHandler(
     try {
       switch (name) {
         case "orchestrate": {
-          const result = await handleOrchestrate(args ?? {});
+          const result = await handleOrchestrate(args ?? {}) as any;
+          // Simulation mode: return the prompt directly so the calling AI executes it
+          if (result?.mode === "simulate") {
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: `## 🤖 AI Orchestrator — ${result.strategy} (No API Keys)
+
+${result.message}
+
+---
+
+${result.prompt}`,
+                },
+              ],
+            };
+          }
+          // Automated mode: return structured JSON result
           return {
             content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
           };
@@ -246,6 +271,7 @@ async function handleOrchestrate(args: Record<string, unknown>): Promise<unknown
   let providers: ProviderConfig[];
 
   if (providerType) {
+    // User explicitly specified a provider — create it directly
     providers = [
       {
         type: providerType as ProviderConfig["type"],
@@ -259,9 +285,26 @@ async function handleOrchestrate(args: Record<string, unknown>): Promise<unknown
     }
   }
 
+  // Check if we have working providers
+  const haveProviders = providerType
+    ? createProvider(providers[0]).isConfigured()
+    : hasConfiguredProviders();
+
   const contextStr = context ? `\n\nContext:\n${context}` : "";
 
-  // Run strategy
+  // ── Simulation Mode (no API keys — AI executes using its own intelligence) ──
+  if (!haveProviders) {
+    return buildSimulationResponse(strategy, question, {
+      councilName,
+      fastMode,
+      options: optionsArr,
+      criteria,
+      rounds,
+      context,
+    });
+  }
+
+  // ── Automated Mode (API keys available) ──
   switch (strategy) {
     case "council": {
       if (councilName && !getCouncil(councilName)) {
@@ -383,6 +426,117 @@ async function handleOrchestrate(args: Record<string, unknown>): Promise<unknown
   }
 }
 
+// ─── Simulation Mode Helper ───
+
+function buildSimulationResponse(
+  strategy: string,
+  question: string,
+  opts: {
+    councilName?: string;
+    fastMode?: boolean;
+    options?: string[];
+    criteria?: any[];
+    rounds?: number;
+    context?: string;
+  },
+) {
+  // Resolve council advisor IDs
+  let advisorIds: string[];
+  const council = opts.councilName ? getCouncil(opts.councilName) : undefined;
+  if (council) {
+    advisorIds = council.advisors.map((a) => a.id);
+  } else if (opts.fastMode) {
+    advisorIds = ["skeptic", "pragmatist", "visionary"];
+  } else {
+    advisorIds = ["muhalif", "ilk_ilkeler", "genislemeci", "yabanci", "icraci"];
+  }
+
+  const simulationMode = "simulate";
+  const contextBlock = opts.context ? `\n## Ek Bağlam\n${opts.context}\n` : "";
+
+  switch (strategy) {
+    case "council":
+      return {
+        mode: simulationMode,
+        strategy: "council",
+        message:
+          "No API keys configured. Executing council using the calling AI's intelligence.",
+        prompt: buildCouncilSimulation(question, advisorIds, !!opts.fastMode, opts.context),
+      };
+
+    case "debate":
+      return {
+        mode: simulationMode,
+        strategy: "debate",
+        message:
+          "No API keys configured. Executing debate using the calling AI's intelligence.",
+        prompt: buildDebateSimulation(question, opts.rounds ?? 2),
+      };
+
+    case "brainstorm":
+      return {
+        mode: simulationMode,
+        strategy: "brainstorm",
+        message:
+          "No API keys configured. Executing brainstorm using the calling AI's intelligence.",
+        prompt: buildBrainstormSimulation(question, 12),
+      };
+
+    case "evaluate": {
+      const rawCriteria = Array.isArray(opts.criteria) ? opts.criteria : [];
+      const parsedCriteria: EvaluationCriterion[] = rawCriteria.map((c: any) => ({
+        name: c.name as string,
+        weight: c.weight as number,
+        description: c.description as string,
+        type: (c.type as "scalar" | "boolean" | "text") ?? "scalar",
+      }));
+
+      const finalCriteria: EvaluationCriterion[] = parsedCriteria.length > 0
+        ? parsedCriteria
+        : [
+            { name: "Impact", weight: 0.3, description: "Potential positive impact", type: "scalar" as const },
+            { name: "Feasibility", weight: 0.25, description: "How practical to implement", type: "scalar" as const },
+            { name: "Cost", weight: 0.2, description: "Resource cost (lower is better)", type: "scalar" as const },
+            { name: "Risk", weight: 0.15, description: "Risk level (lower is better)", type: "scalar" as const },
+            { name: "Time to Value", weight: 0.1, description: "Speed to deliver value", type: "scalar" as const },
+          ];
+
+      const evalOptions = Array.isArray(opts.options) ? opts.options : [];
+
+      return {
+        mode: simulationMode,
+        strategy: "evaluate",
+        message:
+          "No API keys configured. Executing evaluation using the calling AI's intelligence.",
+        prompt: buildEvaluateSimulation(
+          question,
+          evalOptions,
+          finalCriteria,
+          opts.context,
+        ),
+      };
+    }
+
+    case "spec-review":
+      return {
+        mode: simulationMode,
+        strategy: "spec-review",
+        message:
+          "No API keys configured. Executing spec review using the calling AI's intelligence.",
+        prompt: buildSpecReviewSimulation(question),
+      };
+
+    default:
+      return {
+        mode: simulationMode,
+        strategy: "council",
+        message:
+          "No API keys configured. Executing council using the calling AI's intelligence.",
+        prompt: buildCouncilSimulation(question, advisorIds, !!opts.fastMode, opts.context),
+      };
+  }
+}
+
 // ─── Start Server ───
 
 async function main() {
@@ -394,10 +548,16 @@ async function main() {
 
   if (configured === 0) {
     console.error(
-      "[ai-orchestrator] WARNING: No LLM providers configured. Set one of: OPENAI_API_KEY, ANTHROPIC_API_KEY, OPENROUTER_API_KEY, GROQ_API_KEY, GOOGLE_API_KEY, DEEPSEEK_API_KEY, or run Ollama.",
+      "[ai-orchestrator] Running in SIMULATION mode (no API keys). The calling AI will execute strategies using its own intelligence.",
+    );
+    console.error(
+      "  → Set OPENAI_API_KEY, ANTHROPIC_API_KEY, etc. for automated LLM calls.",
+    );
+    console.error(
+      "  → Without keys, the 'orchestrate' tool returns step-by-step instructions for the AI to follow.",
     );
   } else {
-    console.error(`[ai-orchestrator] Ready — ${configured} provider(s) configured.`);
+    console.error(`[ai-orchestrator] Ready — ${configured} provider(s) configured. Available tools: orchestrate, list_councils, list_personas, status`);
   }
 }
 

@@ -392,10 +392,10 @@ export function autoDetectProviders(): ProviderConfig[] {
   if (process.env["DEEPSEEK_API_KEY"]) {
     providers.push({ type: "deepseek" });
   }
-  // Ollama is always attempted if no others configured
-  if (providers.length === 0) {
-    providers.push({ type: "ollama", model: "llama3.2" });
-  }
 
   return providers;
+}
+
+export function hasConfiguredProviders(): boolean {
+  return autoDetectProviders().length > 0;
 }
