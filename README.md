@@ -20,26 +20,35 @@ Supports: **OpenCode, Claude Code, Cursor, Windsurf, Continue, Cline, Copilot, a
 
 ### 15+ Advisor Personas
 
-| Persona | Stance | Specialty |
-|---|---|---|
-| Muhalif (Skeptic) | Critical | Risk detection, failure modes |
-| İlk İlkeler (First Principles) | Analytical | Assumption deconstruction |
-| Genişlemeci (Expansionist) | Creative | Opportunity discovery |
-| Yabancı (Outsider) | Neutral | Jargon-free fresh eyes |
-| İcracı (Executor) | Practical | Implementation, first steps |
+| Persona | Stance | Specialty | Language |
+|---|---|---|---|
+| Skeptic (Muhalif) | Critical | Risk detection, failure modes | EN / TR |
+| First Principles (İlk İlkeler) | Analytical | Assumption deconstruction | EN / TR |
+| Expansionist (Genişlemeci) | Creative | Opportunity discovery | EN / TR |
+| Outsider (Yabancı) | Neutral | Jargon-free fresh eyes | EN / TR |
+| Executor (İcracı) | Practical | Implementation, first steps | EN / TR |
+| Visionary | Creative | Future opportunities |
+| Pragmatist | Practical | Feasibility, resource constraints |
 | Security Auditor | Critical | Attack surfaces, data exposure |
 | UX Advocate | Critical | User journey, accessibility |
 | Business Analyst | Analytical | ROI, market positioning |
 | DevOps Engineer | Practical | Deployability, scaling |
 | Ethicist | Analytical | Fairness, societal impact |
+| Architect | Analytical | System design, patterns |
+| Tester | Critical | Edge cases, testability |
+| Growth Hacker | Creative | Metrics, viral loops |
+
+> Turkish advisors (Muhalif, İlk İlkeler, Genişlemeci, Yabancı, İcracı) are available for Turkish-language decisions. The rest respond in English by default but support any language the question is asked in.
 
 ### Pre-built Councils
 
-- **Akıl Kurulu** (5 Turkish advisors — Karpathy method)
-- **Executive Board** (6 advisors: Skeptic, Visionary, Pragmatist, Security, Business, UX)
-- **Tech Review** (4 specialists: Architecture, Security, DevOps, Testing)
-- **Ethics Board** (4 specialists: Ethics, UX, Skeptic, Business)
-- **Quick Check** (3 advisors, no peer review — fast mode)
+| Council | Advisors | Language | Use Case |
+|---|---|---|---|
+| **Executive Board** | Skeptic, Visionary, Pragmatist, Security, Business, UX | EN | General business decisions |
+| **Akıl Kurulu** | Muhalif, İlk İlkeler, Genişlemeci, Yabancı, İcracı | TR | Turkish-language decisions |
+| **Tech Review** | Architect, Security, DevOps, Tester | EN | Architecture/stability review |
+| **Ethics Board** | Ethicist, UX, Skeptic, Business | EN | Ethical impact assessment |
+| **Quick Check** | Skeptic, Pragmatist, Visionary | EN | Fast 3-advisor decision |
 
 ### Multi-Provider Support
 
@@ -202,28 +211,40 @@ src/
 ### Council Flow (Karpathy Method)
 
 ```
-                   ┌─────────────┐
-                   │  Question   │
-                   └──────┬──────┘
-           ┌──────────────┼──────────────┐
-     ┌─────▼─────┐ ┌─────▼─────┐ ┌─────▼─────┐
-     │ Advisor A │ │ Advisor B │ │ Advisor N │  ← Parallel (isolated)
-     │ (Muhalif) │ │(İlk İlk.)│ │  (...)    │
-     └─────┬─────┘ └─────┬─────┘ └─────┬─────┘
-           └──────────────┼──────────────┘
-                    ┌─────▼─────┐
-                    │ Anonymize │              ← Anonymous review
-                    └─────┬─────┘
-           ┌──────────────┼──────────────┐
-     ┌─────▼─────┐ ┌─────▼─────┐ ┌─────▼─────┐
-     │ Peer Rev A│ │ Peer Rev B│ │ Peer Rev N│
-     └─────┬─────┘ └─────┬─────┘ └─────┬─────┘
-           └──────────────┼──────────────┘
-                    ┌─────▼─────┐
-                    │ Chairman  │              ← Synthesis
-                    │ Verdict   │
-                    └───────────┘
+                    ┌─────────────┐
+                    │  Question   │
+                    └──────┬──────┘
+            ┌──────────────┼──────────────┐
+      ┌─────▼─────┐ ┌─────▼─────┐ ┌─────▼─────┐
+      │ Advisor A │ │ Advisor B │ │ Advisor N │  ← Parallel (isolated)
+      │ (Skeptic) │ │(Visionary)│ │  (...)    │
+      └─────┬─────┘ └─────┬─────┘ └─────┬─────┘
+            └──────────────┼──────────────┘
+                     ┌─────▼─────┐
+                     │ Anonymize │              ← Anonymous review
+                     └─────┬─────┘
+            ┌──────────────┼──────────────┐
+      ┌─────▼─────┐ ┌─────▼─────┐ ┌─────▼─────┐
+      │ Peer Rev A│ │ Peer Rev B│ │ Peer Rev N│
+      └─────┬─────┘ └─────┬─────┘ └─────┬─────┘
+            └──────────────┼──────────────┘
+                     ┌─────▼─────┐
+                     │ Chairman  │              ← Synthesis
+                     │ Verdict   │
+                     └───────────┘
 ```
+
+---
+
+## 🌐 Multi-Language Support
+
+The system is **English-first** but fully multi-language:
+
+- **Executive Board**, Tech Review, Ethics Board, Quick Check → English by default
+- **Akıl Kurulu** → Turkish advisors for Turkish-language decisions
+- You can ask questions in **any language** — the system matches the input language
+- Advisors defined in Turkish (Muhalif, İlk İlkeler, etc.) will respond in Turkish when used
+- The simulation mode (no API keys) also supports any language the calling AI understands
 
 ---
 

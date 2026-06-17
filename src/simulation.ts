@@ -4,6 +4,13 @@ import { ADVISORS } from "./personas.js";
 // ─── Simulation Mode ───
 // When no LLM provider is configured, return a structured prompt
 // that the calling AI agent executes using its own intelligence.
+//
+// All content is English-first to serve global users.
+// Advisors with non-English definitions will respond in their native language.
+
+const MULTI_LANG_NOTE = `> **Multi-language support:** You can respond in any language (English, Turkish, Spanish, etc.).
+> Advisors defined with native-language personas (e.g. Turkish advisors) will respond in that language.
+> The question and context can be in any language — match accordingly.`;
 
 export function buildCouncilSimulation(
   question: string,
@@ -20,156 +27,159 @@ export function buildCouncilSimulation(
     .map(
       (a: AdvisorPersona) => `### ${a.emoji} ${a.name}
 
-**Karakter:** ${a.description}
-
-**Odak açıları:**
+**Focus areas:**
 ${a.focusAreas.map((f: string) => `- ${f}`).join("\n")}
 
-**Ses tonu:** ${a.systemPrompt.slice(0, 200)}
+**Character:** ${a.description}
+
+**Voice:** ${a.systemPrompt.slice(0, 250)}
 `,
     )
     .join("\n");
 
-  const contextBlock = context ? `\n## Ek Bağlam\n${context}\n` : "";
+  const contextBlock = context ? `\n## Additional Context\n${context}\n` : "";
+
+  const advisorLines = list
+    .map((a, i) => `${i + 1}. **${a.emoji} ${a.name}** — ${a.description}`)
+    .join("\n");
 
   return `# 🤖 AI Orchestrator — Council Strategy
 
-## Talimat
-API anahtarı yapılandırılmadığı için bu değerlendirmeyi **kendi AI yeteneklerinle** gerçekleştireceksin. Aşağıdaki adımları sırayla uygula.
+${MULTI_LANG_NOTE}
 
-## Değerlendirilecek Karar
+## Instructions
+No API key is configured, so you will execute this evaluation **using your own intelligence**. Follow the steps below in order.
+
+## Decision to Evaluate
 "${question}"${contextBlock}
 
-## Kullanılacak Danışmanlar
+## Advisors
 ${advisorSections}
 
 ---
 
-## Aşama 1: Bağımsız Görüşler (Paralel)
+## Stage 1: Independent Opinions (Parallel)
 
-Her danışman için aşağıdaki kuralları uygulayarak **150-200 kelimelik** bir değerlendirme yaz:
+Write a **150-200 word** evaluation from each advisor's perspective. Each advisor must NOT see the others' responses — treat each as fully independent. Do NOT try to be balanced — each advisor leans fully into their assigned perspective.
 
-1. **${list[0]?.name ?? "Advisor 1"}** — ${list[0]?.description ?? ""}
-2. **${list[1]?.name ?? "Advisor 2"}** — ${list[1]?.description ?? ""}
-${list[2] ? `3. **${list[2].name}** — ${list[2].description}` : ""}
-${list[3] ? `4. **${list[3].name}** — ${list[3].description}` : ""}
-${list[4] ? `5. **${list[4].name}** — ${list[4].description}` : ""}
-${list[5] ? `6. **${list[5].name}** — ${list[5].description}` : ""}
+${advisorLines}
 
-**Önemli:** Her danışman diğerlerinin cevabını GÖRMEMELİ. Her birini ayrı bir oturumda değerlendiriyormuş gibi düşün. Dengeli olmaya çalışma — her danışman kendi bakış açısına tam yaslansın.
+## Stage 2: Anonymous Peer Review
 
-## Aşama 2: Anonim Akran Değerlendirmesi
+Collect all responses. **Hide** which advisor wrote which (label them Advisor A, B, C, D, E in random order). From each advisor's perspective, answer:
+- Which argument is STRONGEST? (which letter and why?)
+- Which argument is WEAKEST / most risky? (which letter and why?)
+- Which response has a major blind spot? (which letter and what blind spot?)
 
-Tüm cevapları topla. Hangisinin hangi danışmana ait olduğunu **gizle** (Danışman A, B, C, D, E olarak etiketle). Her danışmanın perspektifinden şu soruları cevapla:
-- En güçlü argüman hangisi? Neden?
-- En zayıf/riskli argüman hangisi? Neden?
-- Hangi cevabın kör noktası var?
+## Stage 3: Chairman Synthesis
 
-## Aşama 3: Başkan Sentezi
+Now act as the CHAIRMAN. Evaluate all data and produce a final decision in this exact format:
 
-Şimdi BAŞKAN olarak tüm veriyi değerlendir. Aşağıdaki formatta kesin bir karar yaz:
-
-> **AKIL KURULU KARARI**
+> **FINAL VERDICT**
 >
-> **Hemfikir Olunan Yer:** [ortak noktalar]
+> **Consensus:** [points all advisors agree on]
 >
-> **Çatışılan Yer:** [görüş ayrılıkları]
+> **Conflict:** [key disagreements and why]
 >
-> **Kör Noktalar:** [kaçırılan unsurlar]
+> **Blind Spots:** [critical elements everyone missed]
 >
-> **Tavsiye:** [net karar, "duruma bağlı" deme]
+> **Recommendation:** [clear yes/no/modify — do NOT say "it depends"]
 >
-> **İlk Yapılması Gereken Tek Şey:** [somut adım]
+> **First Action:** [the single concrete step to take Monday morning]
 
 ---
 
-Şimdi adımları uygula ve sonucu bu formatta döndür.`;
+Execute all three stages now and return the result in this format.`;
 }
 
 export function buildDebateSimulation(topic: string, rounds: number): string {
   return `# 🤖 AI Orchestrator — Debate Strategy
 
-## Talimat
-Bu tartışmayı **kendi AI yeteneklerinle** gerçekleştireceksin. Aşağıdaki rolleri canlandır:
+${MULTI_LANG_NOTE}
 
-## Tartışma Konusu
+## Instructions
+Execute this structured debate **using your own intelligence**. Role-play all participants.
+
+## Debate Topic
 "${topic}"
 
-## Format: ${rounds} Turlu Münazara
+## Format: ${rounds}-Round Debate
 
-### Roller
-- **🟢 PRO Savunucusu** — Lehte argümanlar. İkna edici, kanıta dayalı, güçlü.
-- **🔴 KARŞI Savunucusu** — Aleyhte argümanlar. Eleştirel, kanıta dayalı, güçlü.
-- **⚖️ Hakem** — Tarafsız değerlendirme, kazananı belirler.
+### Roles
+- **🟢 PRO Advocate** — Arguments FOR the topic. Persuasive, evidence-based, forceful.
+- **🔴 CON Advocate** — Arguments AGAINST the topic. Critical, evidence-based, forceful.
+- **⚖️ Judge** — Impartial evaluation, declares a clear winner.
 
-### Tur 0: Açılış Konuşmaları
-Hem PRO hem KARŞI 100-150 kelimelik açılış konuşması yapsın.
+### Round 0: Opening Statements
+Both PRO and CON deliver **100-150 word** opening statements.
 
-${Array.from({ length: rounds }, (_, i) => `### Tur ${i + 1}: Rebuttal
-Her iki taraf da rakibinin bir önceki argümanına yanıt versin. Doğrudan karşı atağa geç, spesifik ol.`).join("\n\n")}
+${Array.from({ length: rounds }, (_, i) => `### Round ${i + 1}: Rebuttal
+Each side responds directly to the opponent's previous argument. Be specific, counter their points directly.`).join("\n\n")}
 
-### Karar Turu
-Hakem olarak değerlendir:
-- Kim daha ikna ediciydi?
-- Kanıt kalitesi hangi taraftaydı?
-- Mantıksal tutarlılık?
+### Final Verdict
+As the JUDGE:
+- Who was more persuasive?
+- Which side had stronger evidence?
+- Logical consistency?
 
-**KAZANAN:** [PRO/KARŞI]
-**GEREKÇE:** [2-3 cümle]
+**WINNER:** [PRO/CON]
+**REASONING:** [2-3 sentences]
 
 ---
 
-Şimdi tüm turları oyna ve sonucu bildir.`;
+Execute all rounds now and declare the winner.`;
 }
 
 export function buildBrainstormSimulation(topic: string, targetCount: number): string {
   return `# 🤖 AI Orchestrator — Brainstorm Strategy
 
-## Talimat
-Beyin fırtınasını **kendi AI yeteneklerinle** gerçekleştireceksin.
+${MULTI_LANG_NOTE}
 
-## Konu
+## Instructions
+Execute this brainstorming session **using your own intelligence**.
+
+## Topic
 "${topic}"
 
-## Aşama 1: Iraksak Düşünme (Fikir Üretimi)
+## Stage 1: Divergent Thinking (Idea Generation)
 
-4 farklı perspektiften ${targetCount} fikir üret:
+Generate ${targetCount} ideas from 4 different perspectives:
 
-### 🌙 Hayalperest
-Sınırsız, yaratıcı, bilim-kurgu seviyesinde fikirler. Hiçbir kısıtlama yok.
+### 🌙 Dreamer
+Wild, unconstrained ideas. Sci-fi level. Zero limits.
 
-### 💻 Korsan
-Akıllı kestirmeler, growth hack'ler, sıra dışı çözümler. 80/20 kuralı.
+### 💻 Hacker
+Clever shortcuts, growth hacks, unconventional angles. 80/20 rule.
 
-### 🎨 Sanatçı
-Estetik, deneyim, duygusal etki. İnsan merkezli, güzel, akılda kalıcı.
+### 🎨 Artist
+Aesthetic, experiential, human-centered. Beautiful, memorable.
 
-### 🚀 Füturist
-5-10 yıl sonrası. Trendler, gelişen teknolojiler, paradigma değişimleri.
+### 🚀 Futurist
+5-10 year horizon. Trends, emerging tech, paradigm shifts.
 
-Her perspektiften 3-4 fikir. Toplam ${targetCount} fikir. Her fikir 1-2 cümle.
+3-4 ideas per perspective. Each idea: 1-2 sentences.
 
-## Aşama 2: Yakınsak Düşünme (Değerlendirme)
+## Stage 2: Convergent Thinking (Evaluation)
 
-Tüm fikirleri değerlendir:
-1. **Puanla** — Her fikre yenilik (1-10) ve uygulanabilirlik (1-10) puanı ver
-2. **Kümele** — Benzer fikirleri tematik gruplara ayır
-3. **Seç** — En yüksek puanlı fikri "en iyi fikir" olarak belirle
+Evaluate all ideas:
+1. **Score** — Rate each idea for novelty (1-10) and feasibility (1-10)
+2. **Cluster** — Group similar themes
+3. **Pick** — Select the highest-scoring idea as the winner
 
-## Sonuç Formatı
+## Output Format
 
-**En İyi Fikir:** [içerik]
-**Puanı:** [yenilik]/10 + [uygulanabilirlik]/10
+**Top Idea:** [content]
+**Score:** [novelty]/10 + [feasibility]/10
 
-**Kümeler:**
-- [Küme adı]: [fikirler]
+**Clusters:**
+- [cluster name]: [idea list]
 
-**Tüm Fikirler:**
-1. [fikir] (Y:8 U:6 = 7.0)
+**All Ideas:**
+1. [idea] (N:8 F:6 = 7.0)
 
 ---
 
-Şimdi tüm adımları uygula.`;
+Execute all stages now.`;
 }
 
 export function buildEvaluateSimulation(
@@ -179,115 +189,119 @@ export function buildEvaluateSimulation(
   context?: string,
 ): string {
   const criteriaText = criteria
-    .map((c) => `- **${c.name}** (ağırlık: ${c.weight}): ${c.description}`)
+    .map((c) => `- **${c.name}** (weight: ${c.weight}): ${c.description}`)
     .join("\n");
 
   const optionsText = options
     .map((o, i) => `${String.fromCharCode(65 + i)}) ${o}`)
     .join("\n");
 
-  const contextBlock = context ? `\n## Ek Bağlam\n${context}\n` : "";
+  const contextBlock = context ? `\n## Additional Context\n${context}\n` : "";
 
-  return `# 🤖 AI Orchestrator — Evaluate Strategy
+  return `# 🤖 AI Orchestrator — Multi-Criteria Evaluation
 
-## Talimat
-Bu çok kriterli değerlendirmeyi **kendi AI yeteneklerinle** gerçekleştir.
+${MULTI_LANG_NOTE}
 
-## Değerlendirme Sorusu
+## Instructions
+Execute this weighted evaluation **using your own intelligence**.
+
+## Question
 "${question}"${contextBlock}
 
-## Seçenekler
+## Options
 ${optionsText}
 
-## Kriterler
+## Criteria
 ${criteriaText}
 
-## Adımlar
+## Steps
 
-### 1. Her Seçeneği Puanla
-Her seçeneği her kriter için **1-10** arası puanla. Hesaplama: TOPLAM = Σ(puan × ağırlık)
+### 1. Score Each Option
+Score each option **1-10** per criterion. Calculate: TOTAL = Σ(score × weight)
 
-### 2. Analiz Et
-- Her seçeneğin güçlü ve zayıf yönlerini yaz
-- En iyi seçeneği belirle
+### 2. Analyze
+- Pros and cons of each option
+- Determine the winner
 
-### 3. Sonuç Formatı
+### 3. Output Format
 \`\`\`
-Seçenek A: [toplam puan]
-  + [kriter]: [puan]
-  + Artılar: [...]
-  + Eksiler: [...]
+Option A: [total score]
+  + [criterion]: [score]
+  + Pros: [...]
+  + Cons: [...]
 
-Seçenek B: [toplam puan]
+Option B: [total score]
   ...
 
-KAZANAN: [seçenek]
-ANALİZ: [gerekçe]
+WINNER: [option]
+ANALYSIS: [reasoning]
 \`\`\`
 
 ---
 
-Şimdi değerlendirmeyi yap.`;
+Execute the evaluation now.`;
 }
 
 export function buildSpecReviewSimulation(spec: string): string {
-  return `# 🤖 AI Orchestrator — Spec Review Strategy
+  return `# 🤖 AI Orchestrator — Specification Review
 
-## Talimat
-Bu spesifikasyon/plan incelemesini **kendi AI yeteneklerinle** gerçekleştir.
+${MULTI_LANG_NOTE}
 
-## İncelenecek Doküman
+## Instructions
+Review this specification/plan **using your own intelligence**.
+
+## Document Under Review
 ${spec}
 
-## İnceleme Perspektifleri
+## Review perspectives
 
-Her perspektiften ayrı ayrı değerlendir:
+Evaluate separately from each perspective:
 
-### 🔒 Güvenlik
-- Açık/zafiyet var mı?
-- Veri maruziyeti?
-- Yetkilendirme kontrolleri?
-- Bağımlılık güvenliği?
+### 🔒 Security
+- Vulnerabilities?
+- Data exposure?
+- Auth/authorization?
+- Dependency trust?
 
-### 🎨 Kullanıcı Deneyimi
-- Kullanıcı yolculuğu tutarlı mı?
-- Erişilebilirlik?
-- Kavramsal yük?
-- Keyif anları?
+### 🎨 User Experience
+- User journey coherent?
+- Accessibility?
+- Cognitive load?
+- Delight moments?
 
-### ⚡ Performans
-- Darboğazlar?
-- Ölçeklenme?
-- Önbellekleme stratejisi?
-- Veritabanı sorguları?
+### ⚡ Performance
+- Bottlenecks?
+- Scaling?
+- Caching strategy?
+- Database queries?
 
-### ⚙️ Operasyon
-- Dağıtım/geri alma?
-- İzleme?
-- Hata senaryoları?
-- Altyapı maliyeti?
+### ⚙️ Operations
+- Deploy/rollback?
+- Monitoring?
+- Failure modes?
+- Infrastructure cost?
 
-### 📊 İş Değeri
+### 📊 Business Value
 - ROI?
-- Pazar uyumu?
-- Fırsat maliyeti?
+- Market fit?
+- Opportunity cost?
 
-## Format
+## Output Format
 
-### [Perspektif] İncelemesi
-- ✅ İyi: ...
-- ❌ Eksik: ...
-- 🔧 Öneri: ...
+### [Perspective] Review
+- ✅ Good: ...
+- ❌ Missing: ...
+- 🔧 Suggestion: ...
 
-## Risk Matrisi
-| Kategori | Şiddet | Açıklama | Çözüm |
+## Risk Matrix
+| Category | Severity | Description | Mitigation |
 |---|---|---|---|
 | ... | Critical/High/Medium/Low | ... | ... |
 
-## Genel Puan: [1-10]
-[2-3 cümle özet]
+## Overall Score: [1-10]
+[2-3 sentence summary]
 
 ---
 
-Şimdi spesifikasyonu satır satır incele.`;
+Execute the review now.`;
 }

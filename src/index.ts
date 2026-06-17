@@ -65,7 +65,7 @@ const TOOLS = [
         council: {
           type: "string",
           description:
-            "Preset council to use. Options: akil_kurulu (5 Turkish advisors), executive_board (6 advisors), tech_review (4 tech specialists), ethics_board, quick_check (3 advisors). Default: akil_kurulu.",
+            "Preset council to use. Options: executive_board (6 English advisors), akil_kurulu (5 Turkish advisors), tech_review (4 tech specialists), ethics_board, quick_check (3 advisors). Default: executive_board.",
         },
         provider: {
           type: "string",
@@ -323,7 +323,7 @@ async function handleOrchestrate(args: Record<string, unknown>): Promise<unknown
 
       return {
         strategy: "council",
-        council: councilName || "akil_kurulu",
+        council: councilName || "executive_board",
         question,
         advisorResponses: result.responses.map((r) => ({
           advisor: r.advisorName,
@@ -448,11 +448,11 @@ function buildSimulationResponse(
   } else if (opts.fastMode) {
     advisorIds = ["skeptic", "pragmatist", "visionary"];
   } else {
-    advisorIds = ["muhalif", "ilk_ilkeler", "genislemeci", "yabanci", "icraci"];
+    advisorIds = ["skeptic", "visionary", "pragmatist", "security_auditor", "business_analyst", "ux_advocate"];
   }
 
   const simulationMode = "simulate";
-  const contextBlock = opts.context ? `\n## Ek Bağlam\n${opts.context}\n` : "";
+  const contextBlock = opts.context ? `\n## Additional Context\n${opts.context}\n` : "";
 
   switch (strategy) {
     case "council":
@@ -460,7 +460,7 @@ function buildSimulationResponse(
         mode: simulationMode,
         strategy: "council",
         message:
-          "No API keys configured. Executing council using the calling AI's intelligence.",
+          "No API keys configured. Executing council using the calling AI's own intelligence.",
         prompt: buildCouncilSimulation(question, advisorIds, !!opts.fastMode, opts.context),
       };
 
@@ -469,7 +469,7 @@ function buildSimulationResponse(
         mode: simulationMode,
         strategy: "debate",
         message:
-          "No API keys configured. Executing debate using the calling AI's intelligence.",
+          "No API keys configured. Executing debate using the calling AI's own intelligence.",
         prompt: buildDebateSimulation(question, opts.rounds ?? 2),
       };
 
@@ -478,7 +478,7 @@ function buildSimulationResponse(
         mode: simulationMode,
         strategy: "brainstorm",
         message:
-          "No API keys configured. Executing brainstorm using the calling AI's intelligence.",
+          "No API keys configured. Executing brainstorm using the calling AI's own intelligence.",
         prompt: buildBrainstormSimulation(question, 12),
       };
 
@@ -507,7 +507,7 @@ function buildSimulationResponse(
         mode: simulationMode,
         strategy: "evaluate",
         message:
-          "No API keys configured. Executing evaluation using the calling AI's intelligence.",
+          "No API keys configured. Executing evaluation using the calling AI's own intelligence.",
         prompt: buildEvaluateSimulation(
           question,
           evalOptions,
@@ -522,7 +522,7 @@ function buildSimulationResponse(
         mode: simulationMode,
         strategy: "spec-review",
         message:
-          "No API keys configured. Executing spec review using the calling AI's intelligence.",
+          "No API keys configured. Executing spec review using the calling AI's own intelligence.",
         prompt: buildSpecReviewSimulation(question),
       };
 
@@ -531,7 +531,7 @@ function buildSimulationResponse(
         mode: simulationMode,
         strategy: "council",
         message:
-          "No API keys configured. Executing council using the calling AI's intelligence.",
+          "No API keys configured. Executing council using the calling AI's own intelligence.",
         prompt: buildCouncilSimulation(question, advisorIds, !!opts.fastMode, opts.context),
       };
   }

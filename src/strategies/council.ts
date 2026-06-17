@@ -90,7 +90,7 @@ export async function runCouncil(
     const anonymizedText = shuffled
       .map(
         (op, i) =>
-          `--- DANIŞMAN ${labels[i]} ---\n${op.content}\n`,
+          `--- ADVISOR ${labels[i]} ---\n${op.content}\n`,
       )
       .join("\n");
 
@@ -205,34 +205,34 @@ async function getChairmanSynthesis(
 
   const reviewText = reviews.length > 0
     ? `\n\n## Akran Değerlendirmesi\n${reviews
-        .map((r) => `**${r.reviewerId}:** En güçlü: ${r.strongestArg}, En zayıf: ${r.weakestArg}, Kör nokta: ${r.blindSpot}`)
+        .map((r) => `**${r.reviewerId}:** Strongest: ${r.strongestArg}, Weakest: ${r.weakestArg}, Blind spot: ${r.blindSpot}`)
         .join("\n")}`
     : "";
 
   const prompt = `${council.chairmanPrompt ?? "Synthesize all opinions into a final decision."}
 
-## Orijinal Karar
+## Original Question
 ${question}
 
-## Danışman Görüşleri
+## Advisor Opinions
 ${opinionText}
 ${reviewText}
 
 Format your response EXACTLY as:
 
-**Hemfikir Olunan Yer:**
+**Consensus:**
 ...
 
-**Çatışılan Yer:**
+**Conflict:**
 ...
 
-**Kör Noktalar:**
+**Blind Spots:**
 ...
 
-**Tavsiye:**
+**Recommendation:**
 ...
 
-**İlk Yapılması Gereken Tek Şey:**
+**First Action:**
 ...`;
 
   const messages = [
@@ -261,11 +261,11 @@ function parseSynthesis(text: string): SynthesisResult {
   };
 
   return {
-    consensusAreas: [extract("Hemfikir Olunan Yer") || extract("Consensus")],
-    conflictAreas: [extract("Çatışılan Yer") || extract("Conflict")],
-    blindSpots: [extract("Kör Noktalar") || extract("Blind Spots")],
-    recommendation: extract("Tavsiye") || extract("Recommendation"),
-    firstAction: extract("İlk Yapılması Gereken Tek Şey") || extract("First Action"),
+    consensusAreas: [extract("Consensus") || extract("Hemfikir Olunan Yer")],
+    conflictAreas: [extract("Conflict") || extract("Çatışılan Yer")],
+    blindSpots: [extract("Blind Spots") || extract("Kör Noktalar")],
+    recommendation: extract("Recommendation") || extract("Tavsiye"),
+    firstAction: extract("First Action") || extract("İlk Yapılması Gereken Tek Şey"),
     chairmanNotes: "",
   };
 }
