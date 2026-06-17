@@ -1,0 +1,51 @@
+{
+  "name": "ai-orchestrator",
+  "version": "1.0.0",
+  "description": "Advanced AI orchestration engine — multi-advisor councils, structured debates, creative brainstorming, and multi-criteria evaluation. Works with any MCP-compatible AI tool (OpenCode, Claude Code, Cursor, etc.)",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "ai-orchestrator": "dist/index.js"
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest",
+    "lint": "eslint src/",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "ai",
+    "orchestrator",
+    "council",
+    "debate",
+    "brainstorm",
+    "llm",
+    "multi-agent",
+    "decision-making",
+    "model-context-protocol"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "eslint": "^9.0.0"
+  }
+}
