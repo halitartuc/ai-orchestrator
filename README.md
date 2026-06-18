@@ -191,6 +191,33 @@ Review this architecture spec from security, performance, and UX perspectives.
 Strategy: spec-review
 ```
 
+### Council with Per-Advisor Provider Routing
+
+Each advisor can use a different LLM provider/model when multiple API keys are configured:
+
+```
+Evaluate: "Should we migrate to microservices?"
+
+Strategy: council
+Council: executive_board
+Advisors:
+  - id: skeptic
+    provider: deepseek
+  - id: visionary
+    provider: anthropic
+  - id: pragmatist
+    provider: openai
+    model: gpt-4o
+  - id: security_auditor
+    provider: groq
+  - id: business_analyst
+    provider: google
+  - id: ux_advocate
+    provider: openrouter
+```
+
+Advisors without a `provider` spec use auto-detected providers in round-robin. If no API keys are configured, simulation mode runs all advisors using the calling AI's own intelligence.
+
 ---
 
 ## 🔧 Architecture

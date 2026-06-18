@@ -315,6 +315,7 @@ async function handleOrchestrate(args: Record<string, unknown>): Promise<unknown
       criteria,
       rounds,
       context,
+      advisorsRaw,
     });
   }
 
@@ -459,17 +460,25 @@ function buildSimulationResponse(
     criteria?: any[];
     rounds?: number;
     context?: string;
+    advisorsRaw?: any[];
   },
 ) {
   // Resolve council advisor IDs
   let advisorIds: string[];
-  const council = opts.councilName ? getCouncil(opts.councilName) : undefined;
-  if (council) {
-    advisorIds = council.advisors.map((a) => a.id);
-  } else if (opts.fastMode) {
-    advisorIds = ["skeptic", "pragmatist", "visionary"];
+  const advisorsRaw = opts.advisorsRaw;
+
+  // If user specified custom advisors, use those IDs
+  if (advisorsRaw && advisorsRaw.length > 0) {
+    advisorIds = advisorsRaw.map((a: any) => a.id as string);
   } else {
-    advisorIds = ["skeptic", "visionary", "pragmatist", "security_auditor", "business_analyst", "ux_advocate"];
+    const council = opts.councilName ? getCouncil(opts.councilName) : undefined;
+    if (council) {
+      advisorIds = council.advisors.map((a) => a.id);
+    } else if (opts.fastMode) {
+      advisorIds = ["skeptic", "pragmatist", "visionary"];
+    } else {
+      advisorIds = ["skeptic", "visionary", "pragmatist", "security_auditor", "business_analyst", "ux_advocate"];
+    }
   }
 
   const simulationMode = "simulate";
@@ -482,7 +491,7 @@ function buildSimulationResponse(
         strategy: "council",
         message:
           "No API keys configured. Executing council using the calling AI's own intelligence.",
-        prompt: buildCouncilSimulation(question, advisorIds, !!opts.fastMode, opts.context),
+        prompt: buildCouncilSimulation(question, advisorIds, !!opts.fastMode, opts.context, advisorsRaw),
       };
 
     case "debate":
@@ -553,7 +562,7 @@ function buildSimulationResponse(
         strategy: "council",
         message:
           "No API keys configured. Executing council using the calling AI's own intelligence.",
-        prompt: buildCouncilSimulation(question, advisorIds, !!opts.fastMode, opts.context),
+        prompt: buildCouncilSimulation(question, advisorIds, !!opts.fastMode, opts.context, advisorsRaw),
       };
   }
 }

@@ -58,6 +58,7 @@ export interface AdvisorResponse {
   model: string;
   provider: ProviderType;
   latencyMs: number;
+  tokens?: number;
 }
 
 export interface PeerReviewResult {

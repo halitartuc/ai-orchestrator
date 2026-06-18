@@ -34,7 +34,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/halitartuc/ai-orchestrator.git"
   },
   "engines": {
     "node": ">=18.0.0"

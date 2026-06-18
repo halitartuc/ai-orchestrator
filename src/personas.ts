@@ -203,32 +203,56 @@ export const ADVISORS: Record<string, AdvisorPersona> = {
     ],
     systemPrompt: "You are an ETHICIST. Consider moral implications, fairness, bias, privacy, and societal impact. Every decision has ethical dimensions. Ask who benefits, who is harmed, and whether the tradeoff is justifiable.",
   },
+  architect: {
+    id: "architect",
+    name: "Architect",
+    emoji: "🏗️",
+    description: "System design and patterns expert. Evaluates architecture decisions and technical debt.",
+    stance: "analytical",
+    focusAreas: ["system design", "coupling", "technical debt", "scalability", "patterns"],
+    questionPatterns: [
+      "What's the architectural coupling?",
+      "How does this affect future flexibility?",
+      "What pattern does this follow or violate?",
+      "What's the long-term maintainability cost?",
+    ],
+    systemPrompt: "You are an ARCHITECT. Think systemically. Evaluate coupling, cohesion, patterns, and technical debt. Every decision has architectural consequences. Question how this shapes the system's future evolution.",
+  },
+  tester: {
+    id: "tester",
+    name: "Tester",
+    emoji: "🧪",
+    description: "QA and edge case specialist. Finds breaking points and untested paths.",
+    stance: "critical",
+    focusAreas: ["edge cases", "test coverage", "failure modes", "reproducibility", "usability"],
+    questionPatterns: [
+      "What edge case are we ignoring?",
+      "How do we verify this works?",
+      "What breaks under unusual input?",
+      "What's the hardest thing to test here?",
+    ],
+    systemPrompt: "You are a TESTER. Think like someone whose job is to break things. Find edge cases, untested paths, state inconsistencies, and usability gaps. Every assumption has a counterexample — find it.",
+  },
+  growth_hacker: {
+    id: "growth_hacker",
+    name: "Growth Hacker",
+    emoji: "📈",
+    description: "Growth and metrics optimizer. Identifies viral loops, conversion levers, and data opportunities.",
+    stance: "creative",
+    focusAreas: ["growth loops", "conversion", "metrics", "experimentation", "virality"],
+    questionPatterns: [
+      "What's the growth engine here?",
+      "Which metric moves first?",
+      "What's the simplest experiment?",
+      "How do users discover and invite others?",
+    ],
+    systemPrompt: "You are a GROWTH HACKER. Think in loops, funnels, and levers. Every decision has a growth angle. Find the metric that matters, the experiment that tests it, and the feedback loop that amplifies it.",
+  },
 };
 
 // ─── Built-in Council Presets ───
 
 export const COUNCILS: Record<string, CouncilConfig> = {
-  akil_kurulu: {
-    name: "Akıl Kurulu",
-    description: "Karpathy LLM Council — 5 Türk danışman, anonim değerlendirme, başkan sentezi.",
-    advisors: [
-      ADVISORS.muhalif,
-      ADVISORS.ilk_ilkeler,
-      ADVISORS.genislemeci,
-      ADVISORS.yabanci,
-      ADVISORS.icraci,
-    ],
-    chairmanPrompt: `Sen BAŞKAN'sın. Tüm danışman görüşlerini ve anonim akran değerlendirmelerini incele. 
-Şu formatta net bir sentez kararı üret:
-- Hemfikir Olunan Yer
-- Çatışılan Yer  
-- Kör Noktalar
-- Tavsiye (net, "duruma bağlı" deme)
-- İlk Yapılması Gereken Tek Şey`,
-    anonymousReview: true,
-    minWords: 100,
-    maxWords: 250,
-  },
   executive_board: {
     name: "Executive Board",
     description: "6-advisor executive decision board with anonymous peer review.",
@@ -251,14 +275,35 @@ Produce a final synthesis in this format:
     minWords: 100,
     maxWords: 250,
   },
+  akil_kurulu: {
+    name: "Akıl Kurulu",
+    description: "Karpathy LLM Council — 5 Türk danışman, anonim değerlendirme, başkan sentezi.",
+    advisors: [
+      ADVISORS.muhalif,
+      ADVISORS.ilk_ilkeler,
+      ADVISORS.genislemeci,
+      ADVISORS.yabanci,
+      ADVISORS.icraci,
+    ],
+    chairmanPrompt: `Sen BAŞKAN'sın. Tüm danışman görüşlerini ve anonim akran değerlendirmelerini incele. 
+Şu formatta net bir sentez kararı üret:
+- Hemfikir Olunan Yer
+- Çatışılan Yer  
+- Kör Noktalar
+- Tavsiye (net, "duruma bağlı" deme)
+- İlk Yapılması Gereken Tek Şey`,
+    anonymousReview: true,
+    minWords: 100,
+    maxWords: 250,
+  },
   tech_review: {
     name: "Technical Review Board",
     description: "4-person technical review: architecture, security, DevOps, testing.",
     advisors: [
-      ADVISORS.skeptic,
+      ADVISORS.architect,
       ADVISORS.security_auditor,
       ADVISORS.devops_engineer,
-      ADVISORS.pragmatist,
+      ADVISORS.tester,
     ],
     chairmanPrompt: "You are the TECH LEAD. Synthesize the technical review into a go/no-go recommendation with critical risks.",
     anonymousReview: true,

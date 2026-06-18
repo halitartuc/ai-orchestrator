@@ -88,7 +88,7 @@ export async function runCouncil(
   const opinions = await Promise.all(opinionPromises);
   result.responses = opinions;
   for (const op of opinions) {
-    result.metadata.totalTokens += op.latencyMs; // approximate
+    result.metadata.totalTokens += op.tokens ?? 0;
     if (!result.metadata.providersUsed.includes(op.provider)) {
       result.metadata.providersUsed.push(op.provider);
     }
@@ -115,8 +115,8 @@ export async function runCouncil(
       )
       .join("\n");
 
-    const reviewPromises = advisorList.map((advisor) => {
-      const provider = resolveProvider(advisor.id, Math.random());
+    const reviewPromises = advisorList.map((advisor, i) => {
+      const provider = resolveProvider(advisor.id, i);
       return getPeerReview(advisor, anonymizedText, question, provider);
     });
 
@@ -170,6 +170,7 @@ async function getAdvisorOpinion(
     model: response.model,
     provider: provider.type,
     latencyMs: Date.now() - start,
+    tokens: response.usage?.total_tokens,
   };
 }
 

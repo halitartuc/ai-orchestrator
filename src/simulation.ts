@@ -12,11 +12,14 @@ const MULTI_LANG_NOTE = `> **Multi-language support:** You can respond in any la
 > Advisors defined with native-language personas (e.g. Turkish advisors) will respond in that language.
 > The question and context can be in any language — match accordingly.`;
 
+type AdvisorSpec = { id: string; provider?: string; model?: string };
+
 export function buildCouncilSimulation(
   question: string,
   advisorIds: string[],
   fastMode: boolean,
   context?: string,
+  advisorsSpec?: AdvisorSpec[],
 ): string {
   const advisors = advisorIds
     .map((id) => ADVISORS[id])
@@ -25,7 +28,12 @@ export function buildCouncilSimulation(
 
   const advisorSections = list
     .map(
-      (a: AdvisorPersona) => `### ${a.emoji} ${a.name}
+      (a: AdvisorPersona) => {
+        const spec = advisorsSpec?.find((s) => s.id === a.id);
+        const providerNote = spec?.provider
+          ? `\n\n**Assigned provider:** ${spec.provider}${spec.model ? ` (${spec.model})` : ""}`
+          : "";
+        return `### ${a.emoji} ${a.name}${providerNote}
 
 **Focus areas:**
 ${a.focusAreas.map((f: string) => `- ${f}`).join("\n")}
@@ -33,7 +41,8 @@ ${a.focusAreas.map((f: string) => `- ${f}`).join("\n")}
 **Character:** ${a.description}
 
 **Voice:** ${a.systemPrompt.slice(0, 250)}
-`,
+`;
+      },
     )
     .join("\n");
 

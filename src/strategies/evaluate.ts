@@ -145,10 +145,23 @@ export async function runSpecReview(
 
   const riskMatrix = await getRiskMatrix(spec, reviews, mainProvider);
 
+  // Compute score from risk matrix: start at 10, deduct for each risk
+  const severityDeductions: Record<string, number> = {
+    critical: 3,
+    high: 2,
+    medium: 1,
+    low: 0.5,
+  };
+  let deduction = 0;
+  for (const risk of riskMatrix) {
+    deduction += severityDeductions[risk.severity.toLowerCase()] ?? 0;
+  }
+  const overallScore = Math.max(1, Math.round(10 - deduction));
+
   return {
     reviews,
     riskMatrix,
-    overallScore: 7, // placeholder - could be more sophisticated
+    overallScore,
   };
 }
 
