@@ -48,7 +48,7 @@ const TOOLS = [
   {
     name: "orchestrate",
       description:
-        "Run an AI orchestration strategy to evaluate a decision, idea, or plan from multiple independent perspectives. Supports: council (multi-advisor with anonymous peer review — Karpathy method), debate (structured pro/con), brainstorm (creative idea generation), evaluate (multi-criteria scoring), and spec-review (specialist review). Works WITHOUT API keys — uses the calling AI's own intelligence when no provider is configured. Set one of: OPENAI_API_KEY, ANTHROPIC_API_KEY for automated LLM calls.",
+        "Run an AI orchestration strategy to evaluate a decision, idea, or plan from multiple independent perspectives. Supports: council (multi-advisor with anonymous peer review — Karpathy method), debate (structured pro/con), brainstorm (creative idea generation), evaluate (multi-criteria scoring), and spec-review (specialist review). Works WITHOUT API keys — uses the calling AI's own intelligence when no provider is configured. Set one of: OPENAI_API_KEY, ANTHROPIC_API_KEY for automated LLM calls. WORKFLOW: 1) Call 'status' to see available providers. 2) Call 'list_councils' and 'list_personas' to show options. 3) Ask the user which council and whether they want specific advisors with different providers (e.g. 'skeptic via deepseek, visionary via claude'). 4) If the user has no preference, leave advisors empty for auto round-robin. 5) Never silently proceed — always ask the user first.",
     inputSchema: {
       type: "object" as const,
       properties: {
@@ -124,7 +124,7 @@ const TOOLS = [
   },
   {
     name: "list_councils",
-    description: "List all available council presets with their advisor compositions.",
+    description: "List all available council presets with their advisor compositions. Call this when the user wants a decision evaluation — then show the options and ask which council they prefer. If they have no preference, use the default (executive_board).",
     inputSchema: {
       type: "object" as const,
       properties: {},
@@ -132,7 +132,7 @@ const TOOLS = [
   },
   {
     name: "list_personas",
-    description: "List all available advisor personas that can be used in custom councils.",
+    description: "List all available advisor personas that can be used in custom councils. Call this when the user wants to assign specific advisors with different LLM providers. Show the list and ask which advisors they want and which provider each should use.",
     inputSchema: {
       type: "object" as const,
       properties: {},
