@@ -1,10 +1,12 @@
 import type {
   AdvisorPersona,
   AdvisorResponse,
+  CouncilAdvisorSpec,
   CouncilConfig,
   OrchestrationResult,
   PeerReviewResult,
   ProviderConfig,
+  ProviderType,
   SynthesisResult,
 } from "../types.js";
 import { createProvider, type LlmProvider } from "../providers.js";
@@ -18,6 +20,7 @@ export async function runCouncil(
   councilName?: string,
   customCouncil?: CouncilConfig,
   fastMode = false,
+  advisorsSpec?: CouncilAdvisorSpec[],
 ): Promise<OrchestrationResult> {
   const council = customCouncil ?? getCouncil(councilName ?? "executive_board");
   if (!council) {
@@ -27,10 +30,28 @@ export async function runCouncil(
   }
 
   const advisorList = fastMode ? council.advisors.slice(0, 3) : council.advisors;
-  const llmProviders = providers.map((p) => createProvider(p));
-  const mainProvider = llmProviders[0]; // Primary for chairman
+  const defaultProviders = providers.map((p) => createProvider(p));
 
-  if (!mainProvider || !mainProvider.isConfigured()) {
+  // Resolve per-advisor provider: use advisorSpec if given, otherwise round-robin
+  function resolveProvider(advisorId: string, index: number): LlmProvider {
+    const spec = advisorsSpec?.find((s) => s.id === advisorId);
+    if (spec?.provider) {
+      const matching = defaultProviders.find((p) => p.type === spec.provider);
+      if (matching) return matching;
+      const cfg = providers.find((p) => p.type === (spec.provider as ProviderType));
+      if (cfg) return createProvider({ ...cfg, model: spec.model ?? cfg.model });
+      // Fallback: create a fresh config with just the provider type
+      return createProvider({
+        type: spec.provider as ProviderType,
+        model: spec.model,
+      });
+    }
+    return defaultProviders[index % defaultProviders.length];
+  }
+
+  const mainProvider = defaultProviders[0]; // Primary for chairman
+
+  if (defaultProviders.length === 0) {
     throw new Error(
       "No LLM provider configured. Set OPENAI_API_KEY, ANTHROPIC_API_KEY, or run Ollama locally.",
     );
@@ -60,7 +81,7 @@ export async function runCouncil(
   // ── Stage 1: Independent Opinions (Parallel) ──
 
   const opinionPromises = advisorList.map((advisor, i) => {
-    const provider = llmProviders[i % llmProviders.length];
+    const provider = resolveProvider(advisor.id, i);
     return getAdvisorOpinion(advisor, question, provider);
   });
 
@@ -95,7 +116,7 @@ export async function runCouncil(
       .join("\n");
 
     const reviewPromises = advisorList.map((advisor) => {
-      const provider = llmProviders[Math.floor(Math.random() * llmProviders.length)];
+      const provider = resolveProvider(advisor.id, Math.random());
       return getPeerReview(advisor, anonymizedText, question, provider);
     });
 

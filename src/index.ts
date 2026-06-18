@@ -26,7 +26,7 @@ import {
   COUNCILS,
 } from "./personas.js";
 import { autoDetectProviders, createProvider, hasConfiguredProviders } from "./providers.js";
-import type { ProviderConfig, EvaluationCriterion } from "./types.js";
+import type { ProviderConfig, EvaluationCriterion, CouncilAdvisorSpec } from "./types.js";
 
 // ─── MCP Server Setup ───
 
@@ -104,6 +104,19 @@ const TOOLS = [
             },
           },
           description: "Evaluation criteria with weights (for 'evaluate' strategy).",
+        },
+        advisors: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string", description: "Advisor persona ID (e.g. 'skeptic', 'visionary')." },
+              provider: { type: "string", enum: ["openai", "anthropic", "openrouter", "ollama", "groq", "google", "deepseek"], description: "LLM provider for this specific advisor." },
+              model: { type: "string", description: "Model override for this specific advisor." },
+            },
+            required: ["id"],
+          },
+          description: "Per-advisor provider/model overrides (for 'council' strategy). Each advisor gets its own LLM.",
         },
       },
       required: ["question"],
@@ -262,6 +275,7 @@ async function handleOrchestrate(args: Record<string, unknown>): Promise<unknown
   const optionsArr = (args["options"] as string[]) || undefined;
   const rounds = (args["rounds"] as number) || 2;
   const criteria = (args["criteria"] as any[]) || undefined;
+  const advisorsRaw = (args["advisors"] as any[]) || undefined;
 
   if (!question || question.trim().length === 0) {
     throw new Error("'question' parameter is required.");
@@ -313,12 +327,19 @@ async function handleOrchestrate(args: Record<string, unknown>): Promise<unknown
         );
       }
 
+      const advisorsSpec: CouncilAdvisorSpec[] | undefined = advisorsRaw?.map((a: any) => ({
+        id: a.id as string,
+        provider: a.provider as string | undefined,
+        model: a.model as string | undefined,
+      }));
+
       const result = await runCouncil(
         question + contextStr,
         providers,
         councilName,
         undefined,
         fastMode,
+        advisorsSpec,
       );
 
       return {

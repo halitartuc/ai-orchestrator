@@ -34,6 +34,12 @@ export interface CouncilConfig {
   maxWords: number;
 }
 
+export interface CouncilAdvisorSpec {
+  id: string;
+  provider?: string;
+  model?: string;
+}
+
 export interface OrchestrationRequest {
   question: string;
   strategy: StrategyType;
